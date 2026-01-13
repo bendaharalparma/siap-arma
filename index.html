@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAP-ARMA | Sistem Kepegawaian + Foto</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.css"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
+        .bg-premium {
+            background-color: #1e293b;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-20 bg-slate-100">
+
+    <nav class="bg-premium text-white shadow-xl sticky top-0 z-50 border-b border-slate-600">
+        <div class="max-w-[98%] mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3 cursor-pointer group" onclick="window.location.reload()">
+                    <div class="bg-yellow-500 text-slate-900 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg border border-white/20 group-hover:scale-105 transition">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-xl tracking-tight text-yellow-400 leading-none">SIAP-ARMA</h1>
+                        <p class="text-[10px] text-slate-300 uppercase tracking-widest font-semibold mt-0.5">Lapas Kelas IIB Arga Makmur</p>
+                    </div>
+                </div>
+                <div class="relative w-full max-w-lg">
+                    <input type="text" id="searchInput" onkeyup="performSearch()" placeholder="Cari Pegawai / NIP..." 
+                        class="w-full py-2.5 pl-10 pr-4 rounded-full bg-slate-700/50 border border-slate-500 text-sm focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition text-white placeholder-slate-400">
+                    <i class="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                    <div id="searchResults" class="hidden absolute top-full left-0 w-full mt-2 bg-white text-slate-800 rounded-xl shadow-2xl overflow-hidden max-h-96 overflow-y-auto z-50 border border-gray-200">
+                        <div id="resultsList" class="divide-y divide-gray-100"></div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center bg-slate-700 rounded-lg border border-slate-500 px-3 py-1.5 shadow-inner">
+                        <label class="text-[10px] uppercase font-bold text-slate-400 mr-2">Tahun:</label>
+                        <select id="yearSelector" onchange="changeYear()" class="bg-transparent text-sm font-bold text-yellow-400 focus:outline-none cursor-pointer">
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    <button onclick="openAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition shadow-lg flex items-center border-b-4 border-blue-800 active:border-b-0 active:translate-y-1">
+                        <i class="fas fa-user-cog mr-2"></i> Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-[98%] mx-auto px-2 mt-8 fade-in">
+        <div class="flex justify-between items-end mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Dashboard Kepegawaian <span class="text-blue-600 text-year">2026</span></h2>
+                <p class="text-sm text-slate-500">Monitoring data pegawai dan jadwal kenaikan pangkat/gaji berkala.</p>
+            </div>
+            <div class="bg-white p-1 rounded-lg shadow-sm border border-gray-200 flex space-x-1">
+                <button onclick="switchTab(1)" id="btn-tab1" class="px-6 py-2 rounded-md text-sm font-bold bg-slate-800 text-white shadow transition"><i class="fas fa-sitemap mr-2"></i>Struktur Organisasi</button>
+                <button onclick="switchTab(2)" id="btn-tab2" class="px-6 py-2 rounded-md text-sm font-bold text-slate-500 hover:bg-slate-100 transition"><i class="fas fa-calendar-alt mr-2"></i>Jadwal & Laporan</button>
+            </div>
+        </div>
+
+        <div id="view-struktur" class="space-y-8">
+            <div class="flex justify-center">
+                <div class="bg-white rounded-2xl shadow-xl border-t-8 border-yellow-500 w-full max-w-lg p-6 relative overflow-hidden text-center transform hover:-translate-y-1 transition duration-300">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-chess-king text-7xl text-yellow-600"></i></div>
+                    <h3 class="text-sm font-bold text-yellow-600 uppercase tracking-widest mb-4">Kepala Lembaga Pemasyarakatan</h3>
+                    <div id="box-pimpinan"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-lg border-l-4 border-blue-600 flex flex-col">
+                    <div class="p-4 border-b border-gray-100 bg-blue-50/50"><h3 class="font-bold text-blue-800 text-lg">Pejabat Eselon IV</h3></div>
+                    <div class="p-4 grid gap-3" id="box-eselon4"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg border-l-4 border-indigo-600 flex flex-col">
+                    <div class="p-4 border-b border-gray-100 bg-indigo-50/50"><h3 class="font-bold text-indigo-800 text-lg">Pejabat Eselon V</h3></div>
+                    <div class="p-4 grid gap-3" id="box-eselon5"></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="p-5 border-b border-gray-200 bg-slate-50 flex justify-between items-center">
+                    <div class="flex items-center"><div class="w-8 h-8 rounded bg-slate-200 flex items-center justify-center mr-3"><i class="fas fa-users text-slate-600"></i></div><h3 class="font-bold text-slate-700 text-lg">Staf Pelaksana & Fungsional</h3></div>
+                    <span id="count-staf" class="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow">0 Pegawai</span>
+                </div>
+                <div class="max-h-[600px] overflow-y-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="bg-white text-xs uppercase text-slate-400 sticky top-0 z-10 shadow-sm"><tr><th class="px-6 py-4 w-16">Foto</th><th class="px-6 py-4">Nama Lengkap</th><th class="px-6 py-4">NIP</th><th class="px-6 py-4">Jabatan</th></tr></thead>
+                        <tbody id="box-staf" class="divide-y divide-gray-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-jadwal" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-red-700 to-red-600 rounded-2xl shadow-xl p-8 text-white flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-16 -mt-16"></div>
+                <div class="relative z-10"><h3 class="text-2xl font-bold mb-1"><i class="fas fa-file-pdf mr-2"></i>Cetak Laporan Tahun <span class="text-year"></span></h3><p class="text-red-100 text-sm">Download Daftar Nominatif Pegawai (Format A4 Landscape).</p></div>
+                <button onclick="downloadPDF()" class="mt-4 md:mt-0 bg-white text-red-600 px-8 py-3 rounded-xl font-bold shadow-lg transition hover:bg-red-50 flex items-center relative z-10">Download PDF Landscape <i class="fas fa-download ml-2"></i></button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-lg border-t-4 border-green-500 h-[600px] flex flex-col">
+                    <div class="p-5 border-b border-gray-100 bg-green-50 flex justify-between items-center"><h3 class="font-bold text-green-800">Kenaikan Pangkat</h3><span class="text-xs font-bold bg-white border border-green-200 text-green-600 px-2 py-1 rounded text-year"></span></div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="list-kp"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 h-[600px] flex flex-col">
+                    <div class="p-5 border-b border-gray-100 bg-blue-50 flex justify-between items-center"><h3 class="font-bold text-blue-800">Kenaikan Gaji Berkala</h3><span class="text-xs font-bold bg-white border border-blue-200 text-blue-600 px-2 py-1 rounded text-year"></span></div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="list-kgb"></div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg border-t-4 border-yellow-500 h-[600px] flex flex-col">
+                    <div class="p-5 border-b border-gray-100 bg-yellow-50 flex justify-between items-center"><h3 class="font-bold text-yellow-800">Satya Lencana</h3><span class="text-xs font-bold bg-white border border-yellow-200 text-yellow-600 px-2 py-1 rounded text-year"></span></div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="list-satya"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="hidden fixed inset-0 bg-slate-900/95 z-[60] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+        <div class="bg-white w-full max-w-7xl h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+            <div class="bg-slate-800 text-white p-5 flex justify-between items-center shrink-0">
+                <div class="flex items-center space-x-3"><div class="bg-yellow-500 text-slate-900 w-8 h-8 rounded flex items-center justify-center font-bold"><i class="fas fa-cog"></i></div><h2 class="font-bold text-lg">Admin Panel <span class="text-year text-yellow-400 underline"></span></h2></div>
+                <button onclick="closeAdmin()" class="bg-white/10 hover:bg-red-500 hover:text-white px-4 py-2 rounded-lg transition text-sm font-bold">Tutup</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-100 flex gap-6">
+                <div class="w-1/3 min-w-[320px]">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 sticky top-0">
+                        <h3 class="font-bold text-slate-700 mb-4 border-b pb-3 flex justify-between items-center"><span>Form Edit Pegawai</span><button onclick="resetForm()" class="text-xs text-blue-500 hover:underline">Reset</button></h3>
+                        <input type="hidden" id="editIndex" value="-1">
+                        
+                        <div class="space-y-3">
+                            <div class="border-2 border-dashed border-gray-300 p-3 rounded-lg text-center bg-gray-50 hover:bg-white transition relative group">
+                                <label for="admFotoInput" class="cursor-pointer block">
+                                    <div class="flex flex-col items-center">
+                                        <img id="admFotoPreview" src="https://ui-avatars.com/api/?name=User" class="w-16 h-16 rounded-full object-cover border shadow mb-2">
+                                        <span class="text-xs text-blue-600 font-bold">Klik untuk Ganti Foto</span>
+                                    </div>
+                                    <input type="file" id="admFotoInput" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
+                                    <input type="hidden" id="admFotoBase64">
+                                </label>
+                                <button onclick="removePhoto()" id="btnRemovePhoto" class="hidden absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow hover:bg-red-600">&times;</button>
+                            </div>
+
+                            <input id="admNama" placeholder="Nama Lengkap" class="w-full border p-2 rounded text-sm outline-none focus:border-blue-500">
+                            <input id="admNip" placeholder="NIP" class="w-full border p-2 rounded text-sm outline-none focus:border-blue-500">
+                            <input id="admJab" placeholder="Jabatan" class="w-full border p-2 rounded text-sm outline-none focus:border-blue-500">
+                            <select id="admKat" class="w-full border p-2 rounded text-sm font-semibold bg-gray-50"><option value="Staf">Staf Pelaksana</option><option value="Eselon V">Eselon V</option><option value="Eselon IV">Eselon IV</option><option value="Pimpinan">Pimpinan</option></select>
+                            
+                            <div class="grid grid-cols-2 gap-2 border-t pt-2 mt-2">
+                                <div><label class="text-[10px] font-bold text-green-600 block">KP</label><select id="admKP" class="w-full border p-1 rounded text-xs"><option value="-">-</option><option value="Januari">Jan</option><option value="Februari">Feb</option><option value="Maret">Mar</option><option value="April">Apr</option><option value="Mei">Mei</option><option value="Juni">Jun</option><option value="Juli">Jul</option><option value="Agustus">Agu</option><option value="September">Sep</option><option value="Oktober">Okt</option><option value="November">Nov</option><option value="Desember">Des</option></select></div>
+                                <div><label class="text-[10px] font-bold text-blue-600 block">KGB</label><select id="admKGB" class="w-full border p-1 rounded text-xs"><option value="-">-</option><option value="Januari">Jan</option><option value="Februari">Feb</option><option value="Maret">Mar</option><option value="April">Apr</option><option value="Mei">Mei</option><option value="Juni">Jun</option><option value="Juli">Jul</option><option value="Agustus">Agu</option><option value="September">Sep</option><option value="Oktober">Okt</option><option value="November">Nov</option><option value="Desember">Des</option></select></div>
+                            </div>
+                            <div><label class="text-[10px] font-bold text-yellow-600 block">Satya</label><select id="admSatya" class="w-full border p-1 rounded text-xs"><option value="-">-</option><option value="10 Tahun">10 Tahun</option><option value="20 Tahun">20 Tahun</option><option value="30 Tahun">30 Tahun</option></select></div>
+                        </div>
+                        <button onclick="saveData()" class="w-full bg-blue-600 text-white font-bold py-2 mt-4 rounded-lg shadow hover:bg-blue-700">SIMPAN DATA</button>
+                    </div>
+                </div>
+
+                <div class="w-2/3 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col">
+                    <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                        <span class="font-bold text-sm text-gray-600"><i class="fas fa-list mr-2"></i>Database Pegawai <span class="text-year"></span></span>
+                        <input id="adminSearch" onkeyup="renderAdminTable()" placeholder="Cari nama..." class="border px-3 py-1.5 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="overflow-y-auto flex-1">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-100 text-xs uppercase text-slate-500 sticky top-0 z-10"><tr><th class="px-6 py-3">Pegawai</th><th class="px-6 py-3">Jadwal</th><th class="px-6 py-3 text-center">Aksi</th></tr></thead>
+                            <tbody id="adminTableBody" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-container" class="hidden bg-white text-black font-serif w-[297mm] min-h-[210mm] p-10 relative">
+        <div class="flex flex-col items-center justify-center border-b-4 border-double border-black pb-4 mb-6">
+            <h3 class="text-lg font-bold uppercase tracking-wide">KEMENTERIAN HUKUM DAN HAK ASASI MANUSIA R.I.</h3>
+            <h2 class="text-xl font-bold uppercase tracking-wider">DIREKTORAT JENDERAL PEMASYARAKATAN BENGKULU</h2>
+            <h1 class="text-2xl font-extrabold uppercase tracking-widest mt-1">LAPAS KELAS IIB ARGA MAKMUR</h1>
+            <p class="text-sm italic mt-1">Jl. Soekarno Hatta No. 01, Arga Makmur, Bengkulu Utara</p>
+        </div>
+        <h2 class="text-center font-bold underline mb-6 text-sm">DAFTAR NOMINATIF PEGAWAI & JADWAL KEPEGAWAIAN TAHUN <span class="text-year"></span></h2>
+        <table class="w-full border-collapse border border-black text-[10px] table-fixed">
+            <thead>
+                <tr class="bg-gray-200 text-center">
+                    <th class="border border-black p-2 w-[5%]">No</th>
+                    <th class="border border-black p-2 w-[25%]">Nama / NIP</th>
+                    <th class="border border-black p-2 w-[25%]">Jabatan</th>
+                    <th class="border border-black p-2 w-[15%]">Jadwal KP</th>
+                    <th class="border border-black p-2 w-[15%]">Jadwal KGB</th>
+                    <th class="border border-black p-2 w-[15%]">Satya Lencana</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-body"></tbody>
+        </table>
+        <div class="mt-10 flex justify-end pr-10">
+            <div class="text-center text-xs"><p>Arga Makmur, <span id="pdf-date"></span></p><p class="mb-16">Kepala Urusan Kepegawaian</p><p class="font-bold underline">SUKANDI, S.H.</p><p>NIP. 19800101 200312 1 002</p></div>
+        </div>
+    </div>
+
+    <script>
+        const masterDB = [
+            {nama: "YULIAN FERNANDO, A.Md.IP.,S.Sos.", nip: "198607182007011002", jab: "KEPALA LAPAS", kat: "Pimpinan", kp: "-", kgb: "-", satya: "-"},
+            {nama: "GANANG MAHARDIKO, S.Tr.Pas", nip: "199501092018081001", jab: "KA KPLP", kat: "Eselon IV", kp: "-", kgb: "Agustus", satya: "-"},
+            {nama: "SUPANGAT, SH", nip: "197710252001121001", jab: "KASI BINADIK & GIATJA", kat: "Eselon IV", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "SAFRAN AZIZ, S.H.", nip: "197104212002121001", jab: "KASI ADM KAMTIB", kat: "Eselon IV", kp: "-", kgb: "-", satya: "-"},
+            {nama: "SYARIF HIDAYAT, S.H.", nip: "198007152001121001", jab: "KASUBBAG TU", kat: "Eselon IV", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "SUYONO, S.H.", nip: "198007162003121001", jab: "KASUBSI KEAMANAN", kat: "Eselon V", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "YUNIZAR HERDA, S.IP", nip: "197706222001121001", jab: "KAUR UMUM", kat: "Eselon V", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "SUKANDI, S.H.", nip: "198001012003121002", jab: "KAUR KEPEG & KEU", kat: "Eselon V", kp: "Oktober", kgb: "Desember", satya: "-"},
+            {nama: "JUNI MIHANDRI, S.E.", nip: "198506242005011002", jab: "KASUBSI GIATJA", kat: "Eselon V", kp: "Oktober", kgb: "Januari", satya: "-"},
+            {nama: "RAHMAN AFRIYADI, S.H, M.H.", nip: "198805152008011001", jab: "KASUBSI REGISTRASI", kat: "Eselon V", kp: "Oktober", kgb: "-", satya: "-"},
+            {nama: "RIO TRISNA DAYU, S.I.Kom", nip: "198912242012121004", jab: "KASUBSI PORTATIB", kat: "Eselon V", kp: "-", kgb: "-", satya: "-"},
+            {nama: "IWAN APRILIANTO, S.E.", nip: "198204102007031003", jab: "KASUBSI PERAWATAN", kat: "Eselon V", kp: "-", kgb: "Maret", satya: "-"},
+            {nama: "BENNY LOFIANTO, S.S.T.", nip: "197802091997021001", jab: "PENGOLAH DATA KESEHATAN", kat: "Staf", kp: "-", kgb: "Februari", satya: "-"},
+            {nama: "ENDANG HARIYANTO, S.H.", nip: "197904272000031001", jab: "PENGELOLA SARANA KERJA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "DWI MARTIN SAPUTRA, S.H.", nip: "198203282001121001", jab: "PK AHLI MUDA", kat: "Staf", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "ANIK SUPARNI, S.H.", nip: "198311202002122001", jab: "PENGELOLA DATABASE", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "GUSDALELA FITRI NENGSIH, S.H.", nip: "198308012005012001", jab: "PENGELOLA BMN", kat: "Staf", kp: "-", kgb: "Januari", satya: "-"},
+            {nama: "NINDIK SUTARNO, S.H", nip: "198206142005011001", jab: "PK AHLI MUDA", kat: "Staf", kp: "-", kgb: "Januari", satya: "-"},
+            {nama: "Ns. LINDA SUSMITA, S.Kep", nip: "198706252011012009", jab: "PENGELOLA MAKANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "SUMARSO, S.Sos", nip: "197906132006041001", jab: "KOMANDAN JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "20 Tahun"},
+            {nama: "BASUKI RAHMAT, S.H.", nip: "198808272009011001", jab: "KOMANDAN JAGA", kat: "Staf", kp: "-", kgb: "Januari", satya: "-"},
+            {nama: "YOUPI YUHENDRA, S.Pd", nip: "198406122010121002", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "ATIK INDRIYANI, S.H", nip: "199004192010122002", jab: "PENGOLAH LAPORAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "JELIA HERAWATI, S.P.d", nip: "198804012010122006", jab: "PENGADMINISTRASI KEU", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "YUSTATI", nip: "196810101991032001", jab: "PENGOLAH DATA", kat: "Staf", kp: "-", kgb: "Mei", satya: "-"},
+            {nama: "SUHISTI", nip: "197106011991032001", jab: "PENGADMINISTRASI UMUM", kat: "Staf", kp: "-", kgb: "Juni", satya: "-"},
+            {nama: "ZARKANDI", nip: "196808291992031001", jab: "KOMANDAN JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "TURIMAN", nip: "196809251988031001", jab: "PENGELOLA PEMBINAAN", kat: "Staf", kp: "-", kgb: "April", satya: "-"},
+            {nama: "SURIP", nip: "197404241994031001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "FIKA APRIANTI, S.E", nip: "199004162010122002", jab: "ARSIPARIS AHLI PERTAMA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "ARI HOTMAN, S.H.", nip: "198109032001121004", jab: "KOMANDAN JAGA", kat: "Staf", kp: "Oktober", kgb: "Desember", satya: "-"},
+            {nama: "SUWANDI", nip: "197010281990031001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "Juli", satya: "-"},
+            {nama: "SUDIRMAN", nip: "196808281988031001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "ANITA KAROLINA, A.Md.Kep.", nip: "197907112005012001", jab: "PERAWAT MAHIR", kat: "Staf", kp: "-", kgb: "Januari", satya: "-"},
+            {nama: "ZAINUDIN, S.H.", nip: "196910111993031001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "Oktober", kgb: "-", satya: "-"},
+            {nama: "EIN TRISNO", nip: "198609282007031002", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "Maret", satya: "-"},
+            {nama: "YOGA TIMEIGA", nip: "198305302006041001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "20 Tahun"},
+            {nama: "PRAYITNO", nip: "198708252009121004", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "MADE SUGIANTO", nip: "198607302010121005", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "RAZIE OKTAFIANSYAH", nip: "198910032012121003", jab: "PENELAAH STATUS WBP", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "MUCHTAR ARSYAD F S", nip: "198801032009011002", jab: "BENDAHARA PENGELUARAN", kat: "Staf", kp: "April", kgb: "Januari", satya: "-"},
+            {nama: "YOMPI SURYA DESTA", nip: "198912252017121001", jab: "PENGADMINISTRASI UMUM", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "DANIEL MARPAUNG", nip: "199202022017121003", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "NURHIDAYAT ADI PURNAMA", nip: "199205162017121002", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "RACHMAD SEPTIADI", nip: "199309152017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "HERRY BUDIMAN", nip: "199404072017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "EDO SUPRIADI", nip: "199504242017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "MEIZI ANDRIANSYAH", nip: "199505012017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "ANDIKA BIMANTARA", nip: "199510282017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "ARDI FANRONIK", nip: "199512212017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "ENDAH YUNIARTI", nip: "199606122017122001", jab: "PENGADMINISTRASI UMUM", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "MUHAMAD ANDIKA RIANSYAH", nip: "199609172017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "DIYAH PUTRI RAHMAWATI", nip: "199707022017122001", jab: "PENGADMINISTRASI UMUM", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "FARHAN MAHMUDI NASUTION", nip: "199709152017121001", jab: "PENGELOLA MAKANAN", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "FAHMI KHARISMA AKBAR", nip: "199803102017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "JAKA SURYADINATA", nip: "199805252017121001", jab: "BENDAHARA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "M. RAHMAT AGUS SETIAWAN", nip: "199808162017121002", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "ALFOB RISHIKA", nip: "199902042017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "April", kgb: "Desember", satya: "-"},
+            {nama: "JULIANSYAH", nip: "199207092017121002", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "MUHAMMAD SERLI PUTERA", nip: "199309062017121003", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "ROBI GUNAWAN PURBA", nip: "199807192017121001", jab: "ANGGOTA JAGA", kat: "Staf", kp: "-", kgb: "Desember", satya: "-"},
+            {nama: "JOSUA ARIMETA", nip: "199801042020121003", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "AHMAD FAJAR EFRILIANSYAH", nip: "199904022020121001", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "TEGUH OKTARINO DAMANIK", nip: "199910222020121001", jab: "PENGELOLA MAKANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "RANGGA ICHIRO JANUARTA", nip: "200501072024041001", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "RANGGA TIO SAPUTRA", nip: "200412182024041002", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "LUKMAN ARIF ASMANNA", nip: "200206162025021001", jab: "PK AHLI PERTAMA", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "DIMAS ANGGI PRASETYA", nip: "199905202025061017", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "ILHAM", nip: "200012142025061004", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "AKMAL AMRI NASUTION", nip: "200111282025061003", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "DANIEL DWI PUTRA MANIK", nip: "200112032025061004", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "YUANA", nip: "200302092025062006", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "DEFRAN RAHMAT FERNANDO", nip: "200311292025061002", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "DIKI ALIANSA", nip: "200312312025061002", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "AHMAD DHANI", nip: "200405142025061004", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "RIZKI ZAKI FADILAH", nip: "200412302025062001", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"},
+            {nama: "TASDIKUR RAHMAN", nip: "200504012025061005", jab: "PENJAGA TAHANAN", kat: "Staf", kp: "-", kgb: "-", satya: "-"}
+        ];
+
+        let currentYear = "2026";
+        let employees = [];
+
+        function loadData(year) {
+            currentYear = year;
+            document.querySelectorAll('.text-year').forEach(el => el.innerText = year);
+            const stored = localStorage.getItem(`siapArmaDB_${year}_v2`);
+            if(stored) {
+                employees = JSON.parse(stored);
+            } else {
+                employees = JSON.parse(JSON.stringify(masterDB)); 
+                if(year !== "2026") {
+                   employees.forEach(e => { e.kp = '-'; e.kgb = '-'; e.satya = '-'; });
+                }
+                localStorage.setItem(`siapArmaDB_${year}_v2`, JSON.stringify(employees));
+            }
+            renderView();
+        }
+
+        function changeYear() {
+            const y = document.getElementById('yearSelector').value;
+            loadData(y);
+        }
+
+        function renderView() {
+            const pimpinan = document.getElementById('box-pimpinan');
+            const eselon4 = document.getElementById('box-eselon4');
+            const eselon5 = document.getElementById('box-eselon5');
+            const staf = document.getElementById('box-staf');
+            const listKP = document.getElementById('list-kp');
+            const listKGB = document.getElementById('list-kgb');
+            const listSatya = document.getElementById('list-satya');
+
+            [pimpinan, eselon4, eselon5, staf, listKP, listKGB, listSatya].forEach(el => el.innerHTML = '');
+            let countStaf = 0;
+
+            employees.forEach(e => {
+                const avatar = e.foto || `https://ui-avatars.com/api/?name=${e.nama}&background=random&color=fff&size=128`;
+                
+                if(e.kat === 'Pimpinan') {
+                    pimpinan.innerHTML = `<img src="${avatar}" class="w-32 h-32 rounded-full border-4 border-yellow-200 shadow-md mb-3 mx-auto object-cover"><h4 class="font-bold text-xl text-slate-800 text-center">${e.nama}</h4><p class="text-sm font-mono text-gray-500 text-center">${e.nip}</p>`;
+                } else if(e.kat === 'Eselon IV') {
+                    eselon4.innerHTML += createCard(e, avatar, 'blue');
+                } else if(e.kat === 'Eselon V') {
+                    eselon5.innerHTML += createCard(e, avatar, 'indigo');
+                } else {
+                    countStaf++;
+                    staf.innerHTML += `<tr class="hover:bg-slate-50 transition border-b"><td class="px-6 py-3"><img src="${avatar}" class="w-10 h-10 rounded-full object-cover shadow-sm"></td><td class="px-6 py-3 font-semibold text-slate-700">${e.nama}</td><td class="px-6 py-3 font-mono text-xs text-gray-500">${e.nip}</td><td class="px-6 py-3 text-xs">${e.jab}</td></tr>`;
+                }
+
+                if(e.kp !== '-') listKP.innerHTML += createSchedItem(e, e.kp, 'green');
+                if(e.kgb !== '-') listKGB.innerHTML += createSchedItem(e, e.kgb, 'blue');
+                if(e.satya !== '-') listSatya.innerHTML += createSchedItem(e, e.satya, 'yellow');
+            });
+            document.getElementById('count-staf').innerText = countStaf + " Pegawai";
+        }
+
+        function createCard(e, img, color) {
+            return `<div class="flex items-center space-x-4 p-4 bg-white rounded-lg border border-${color}-100 shadow-sm hover:shadow-md transition"><img src="${img}" class="w-12 h-12 rounded-full object-cover border"><div class="overflow-hidden"><p class="font-bold text-sm truncate text-slate-800">${e.nama}</p><p class="text-[10px] text-gray-500 truncate uppercase">${e.jab}</p></div></div>`;
+        }
+
+        function createSchedItem(e, val, color) {
+            return `<div class="p-3 bg-${color}-50 border border-${color}-100 rounded-lg flex justify-between items-center"><div class="flex items-center space-x-2"><div class="w-2 h-2 rounded-full bg-${color}-500"></div><span class="font-bold text-xs text-slate-700 truncate w-40">${e.nama}</span></div><span class="bg-white text-${color}-600 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm border border-${color}-200">${val}</span></div>`;
+        }
+
+        function performSearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const resBox = document.getElementById('searchResults');
+            const resList = document.getElementById('resultsList');
+            resList.innerHTML = '';
+
+            if(q.length < 2) { resBox.classList.add('hidden'); return; }
+
+            const hits = employees.filter(e => e.nama.toLowerCase().includes(q) || e.nip.includes(q));
+            
+            if(hits.length === 0) {
+                resList.innerHTML = `<div class="p-8 text-center"><i class="fas fa-ghost text-4xl text-gray-200 mb-2"></i><p class="text-gray-400 text-sm">Pegawai tidak ditemukan.</p></div>`;
+            } else {
+                hits.forEach(e => {
+                    const avatar = e.foto || `https://ui-avatars.com/api/?name=${e.nama}&background=0f172a&color=fff&size=64`;
+                    let badges = '';
+                    if(e.kp !== '-') badges += `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-md">KP: ${e.kp}</span>`;
+                    if(e.kgb !== '-') badges += `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md">KGB: ${e.kgb}</span>`;
+                    if(e.satya !== '-') badges += `<span class="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded-md">Satya: ${e.satya}</span>`;
+                    
+                    resList.innerHTML += `
+                        <div class="p-4 hover:bg-slate-50 transition border-b last:border-0 cursor-pointer group" onclick="alert('Detail:\\nNama: ${e.nama}\\nJabatan: ${e.jab}\\nKP: ${e.kp}\\nKGB: ${e.kgb}')">
+                            <div class="flex items-center space-x-4">
+                                <img src="${avatar}" class="w-12 h-12 rounded-full shadow-sm object-cover">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-sm text-slate-800 group-hover:text-blue-600">${e.nama}</h4>
+                                    <p class="text-[10px] text-gray-500 uppercase tracking-wide">${e.jab}</p>
+                                    <div class="flex space-x-2 mt-2">${badges || '<span class="text-[10px] text-gray-400">Tidak ada jadwal</span>'}</div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+            resBox.classList.remove('hidden');
+        }
+
+       // --- PERBAIKAN: KOMPRESI FOTO AGAR BISA DISIMPAN ---
+        function handlePhotoUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Cek ukuran file awal (maksimal 5MB agar browser tidak hang)
+                if(file.size > 5 * 1024 * 1024) {
+                    alert("Ukuran foto terlalu besar! Harap pilih foto di bawah 5MB.");
+                    input.value = "";
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    
+                    img.onload = function() {
+                        // Proses Resize (Kecilkan) Gambar
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Kita set lebar maksimal 150px (cukup untuk avatar)
+                        const maxWidth = 150; 
+                        const scaleFactor = maxWidth / img.width;
+                        const newWidth = maxWidth;
+                        const newHeight = img.height * scaleFactor;
+                        
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+                        
+                        // Gambar ulang di canvas
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                        
+                        // Konversi ke Base64 Hemat Memori (JPEG kualitas 0.7)
+                        const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+                        
+                        // Tampilkan & Simpan data yang sudah dikompres
+                        document.getElementById('admFotoPreview').src = compressedData;
+                        document.getElementById('admFotoBase64').value = compressedData; // Ini yang disimpan ke database
+                        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removePhoto() {
+            document.getElementById('admFotoBase64').value = '';
+            document.getElementById('admFotoPreview').src = `https://ui-avatars.com/api/?name=User`;
+            document.getElementById('admFotoInput').value = '';
+            document.getElementById('btnRemovePhoto').classList.add('hidden');
+        }
+
+        function openAdmin() {
+            Swal.fire({title:'Login Admin', input:'password', showCancelButton:true}).then(r=>{
+                if(r.value === 'admin123') { document.getElementById('adminPanel').classList.remove('hidden'); renderAdminTable(); }
+                else if (r.value) Swal.fire('Akses Ditolak','Password salah.','error');
+            });
+        }
+        function closeAdmin() { document.getElementById('adminPanel').classList.add('hidden'); renderView(); }
+        
+        function resetForm() {
+            document.getElementById('editIndex').value = "-1";
+            ['admNama','admNip','admJab'].forEach(id => document.getElementById(id).value = '');
+            ['admKP','admKGB','admSatya'].forEach(id => document.getElementById(id).value = '-');
+            removePhoto();
+            document.getElementById('admKat').value = 'Staf';
+        }
+
+        function saveData() {
+            const idx = parseInt(document.getElementById('editIndex').value);
+            const newData = {
+                nama: document.getElementById('admNama').value,
+                nip: document.getElementById('admNip').value,
+                jab: document.getElementById('admJab').value,
+                kat: document.getElementById('admKat').value,
+                kp: document.getElementById('admKP').value,
+                kgb: document.getElementById('admKGB').value,
+                satya: document.getElementById('admSatya').value,
+                foto: document.getElementById('admFotoBase64').value // Save Photo
+            };
+            if(!newData.nama) return Swal.fire('Gagal','Nama wajib diisi','warning');
+
+            if(idx === -1) employees.push(newData);
+            else employees[idx] = newData;
+
+            localStorage.setItem(`siapArmaDB_${currentYear}_v2`, JSON.stringify(employees));
+            renderAdminTable(); resetForm(); Swal.fire('Berhasil','Data disimpan','success');
+        }
+
+        function deleteData(idx) {
+            Swal.fire({title:'Hapus Data?', text:'Tindakan ini permanen', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Ya, Hapus'}).then(r => {
+                if(r.isConfirmed) {
+                    employees.splice(idx, 1);
+                    localStorage.setItem(`siapArmaDB_${currentYear}_v2`, JSON.stringify(employees));
+                    renderAdminTable();
+                }
+            });
+        }
+
+        function editData(idx) {
+            const e = employees[idx];
+            document.getElementById('editIndex').value = idx;
+            document.getElementById('admNama').value = e.nama;
+            document.getElementById('admNip').value = e.nip;
+            document.getElementById('admJab').value = e.jab;
+            document.getElementById('admKat').value = e.kat;
+            document.getElementById('admKP').value = e.kp;
+            document.getElementById('admKGB').value = e.kgb;
+            document.getElementById('admSatya').value = e.satya;
+            
+            // Handle Photo Edit
+            if(e.foto) {
+                document.getElementById('admFotoBase64').value = e.foto;
+                document.getElementById('admFotoPreview').src = e.foto;
+                document.getElementById('btnRemovePhoto').classList.remove('hidden');
+            } else {
+                removePhoto();
+                document.getElementById('admFotoPreview').src = `https://ui-avatars.com/api/?name=${e.nama}`;
+            }
+        }
+
+        function renderAdminTable() {
+            const q = document.getElementById('adminSearch').value.toLowerCase();
+            const tbody = document.getElementById('adminTableBody');
+            tbody.innerHTML = '';
+            employees.forEach((e,i) => {
+                if(e.nama.toLowerCase().includes(q)) {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-blue-50 border-b">
+                            <td class="px-4 py-2"><div class="flex items-center space-x-2"><img src="${e.foto || `https://ui-avatars.com/api/?name=${e.nama}&size=32`}" class="w-8 h-8 rounded-full object-cover"><div class="flex flex-col"><span class="font-bold text-slate-700 text-xs">${e.nama}</span><span class="text-[10px] text-gray-400">${e.kat}</span></div></div></td>
+                            <td class="px-4 py-2 text-[10px]"><span class="block">KP: ${e.kp}</span><span class="block">KGB: ${e.kgb}</span></td>
+                            <td class="px-4 py-2 text-center flex justify-center space-x-2"><button onclick="editData(${i})" class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200"><i class="fas fa-pen text-xs"></i></button><button onclick="deleteData(${i})" class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200"><i class="fas fa-trash text-xs"></i></button></td>
+                        </tr>`;
+                }
+            });
+        }
+
+        function switchTab(num) {
+            document.getElementById('view-struktur').classList.add('hidden');
+            document.getElementById('view-jadwal').classList.add('hidden');
+            document.getElementById('btn-tab1').className = "px-6 py-2 rounded-md text-sm font-bold text-slate-500 hover:bg-slate-100 transition";
+            document.getElementById('btn-tab2').className = "px-6 py-2 rounded-md text-sm font-bold text-slate-500 hover:bg-slate-100 transition";
+            if(num === 1) {
+                document.getElementById('view-struktur').classList.remove('hidden');
+                document.getElementById('btn-tab1').className = "px-6 py-2 rounded-md text-sm font-bold bg-slate-800 text-white shadow transition";
+            } else {
+                document.getElementById('view-jadwal').classList.remove('hidden');
+                document.getElementById('btn-tab2').className = "px-6 py-2 rounded-md text-sm font-bold bg-slate-800 text-white shadow transition";
+            }
+        }
+
+        function downloadPDF() {
+            const tbody = document.getElementById('pdf-body');
+            tbody.innerHTML = '';
+            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('id-ID',{year:'numeric',month:'long',day:'numeric'});
+            employees.forEach((e, i) => {
+                tbody.innerHTML += `<tr><td class="border border-black p-1 text-center">${i+1}</td><td class="border border-black p-1 font-bold break-words">${e.nama}<br><span class="font-normal font-mono text-[8px]">${e.nip}</span></td><td class="border border-black p-1 break-words">${e.jab}</td><td class="border border-black p-1 text-center">${e.kp}</td><td class="border border-black p-1 text-center">${e.kgb}</td><td class="border border-black p-1 text-center">${e.satya}</td></tr>`;
+            });
+            const el = document.getElementById('pdf-container');
+            el.classList.remove('hidden');
+            html2pdf().set({ margin: 0.5, filename: `Laporan_Pegawai_${currentYear}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(()=>el.classList.add('hidden'));
+        }
+
+        loadData("2026");
+    </script>
+</body>
+</html>
